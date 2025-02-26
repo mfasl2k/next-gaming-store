@@ -1,0 +1,47 @@
+"use client";
+import React from "react";
+import Cart from "./components/Cart";
+import { VscAccount } from "react-icons/vsc";
+
+const NavBar = () => {
+  return (
+    <div className="navbar bg-slate-300 shadow-sm">
+      <div className="flex-1">
+        <a className="btn btn-ghost text-xl">Green Gaming</a>
+      </div>
+      <div className="flex-none gap-2">
+        <Cart />
+        <div className="dropdown dropdown-end">
+          <div
+            tabIndex={0}
+            role="button"
+            className="btn btn-ghost btn-circle avatar"
+          >
+            <div className="rounded-full">
+              <VscAccount size="1.5rem" />
+            </div>
+          </div>
+          <ul
+            tabIndex={0}
+            className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
+          >
+            <li>
+              <a className="justify-between">
+                Profile
+                <span className="badge">New</span>
+              </a>
+            </li>
+            <li>
+              <a>Settings</a>
+            </li>
+            <li>
+              <a>Logout</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default NavBar;

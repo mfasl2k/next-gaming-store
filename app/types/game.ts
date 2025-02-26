@@ -6,5 +6,6 @@ export default interface Game {
   price: number;
   rating: number;
   createdAt: Date;
+  updatedAt: Date;
   releaseDate: Date;
 }
