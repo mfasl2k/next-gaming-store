@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/prisma/client";
+import { ZodSchema } from "zod";
 
-const prisma = new PrismaClient();
+type ModelName = "games" | "users" | "carts";
 
-type ModelName = "games" | "genres" | "platform" | "users" | "carts";
+async function findModelById(model: any, id: number) {
+  const data = await model.findUnique({
+    where: { id },
+  });
+  return data ? data : null; // Return null if not found
+}
 
 export async function handleRequest(
   request: NextRequest,
   modelName: ModelName,
-  id?: number,
-  customCreateHandler?: (data: any) => Promise<any> // Custom handler for POST
+  validationSchema?: ZodSchema,
+  id?: number
 ) {
   const model = (prisma as any)[modelName];
 
@@ -21,40 +27,48 @@ export async function handleRequest(
     switch (request.method) {
       case "GET":
         if (id) {
-          const data = await model.findUnique({ where: { id } });
-          return data
-            ? NextResponse.json(data, { status: 200 })
-            : NextResponse.json({ error: "Not found" }, { status: 404 });
+          const data = await findModelById(model, id);
+          if (!data) {
+            return NextResponse.json(
+              { error: "Data is Not found" },
+              { status: 404 }
+            );
+          }
+          NextResponse.json({ error: "Not found" }, { status: 404 });
         }
         const allData = await model.findMany();
         return NextResponse.json(allData, { status: 200 });
 
       case "POST":
         const body = await request.json();
-        if (customCreateHandler) {
-          const created = await customCreateHandler(body); // Call custom handler
-          return NextResponse.json(created, { status: 201 });
-        } else {
-          const created = await model.create({ data: body });
-          return NextResponse.json(created, { status: 201 });
-        }
+        const validation = validationSchema?.safeParse(body);
+        if (!validation?.success)
+          return NextResponse.json(validation?.error.errors, {
+            status: 400,
+          });
+        const created = await model.create({ data: body });
+        return NextResponse.json(created, { status: 201 });
 
       case "PATCH":
-        if (!id)
+        const patchData = await findModelById(model, id!);
+        if (!patchData) {
           return NextResponse.json(
-            { error: "ID is required" },
-            { status: 400 }
+            { error: " Data is Not found" },
+            { status: 404 }
           );
+        }
         const updateData = await request.json();
         const updated = await model.update({ where: { id }, data: updateData });
         return NextResponse.json(updated, { status: 200 });
 
       case "DELETE":
-        if (!id)
+        const deleteData = await findModelById(model, id!);
+        if (!deleteData) {
           return NextResponse.json(
-            { error: "ID is required" },
-            { status: 400 }
+            { error: "Data is Not found" },
+            { status: 404 }
           );
+        }
         await model.delete({ where: { id } });
         return NextResponse.json(
           { message: "Deleted successfully" },

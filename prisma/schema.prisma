@@ -20,46 +20,11 @@ model Games {
   image       String
   price       Float
   rating      Float
-  genres       GenresOnGames[]
-  platforms    PlatformsOnGames[]
   releaseDate DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
 
-model Genres {
-  id        Int      @id @default(autoincrement())
-  name      String
-  games     GenresOnGames[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Platform {
-  id        Int      @id @default(autoincrement())
-  name      String
-  games     PlatformsOnGames[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-
-model GenresOnGames {
-  gameId    Int
-  genreId   Int
-  game      Games   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  genre     Genres  @relation(fields: [genreId], references: [id], onDelete: Cascade)
-
-  @@id([gameId, genreId])
-}
-
-model PlatformsOnGames {
-  gameId    Int
-  platformId Int
-  game      Games    @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  platform  Platform @relation(fields: [platformId], references: [id], onDelete: Cascade)
-
-  @@id([gameId, platformId])
+  Carts Carts[]
 }
 
 model Users {
@@ -68,6 +33,8 @@ model Users {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  Carts Carts[]
 }
 
 model Carts {
@@ -77,4 +44,7 @@ model Carts {
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id])
+  game Games @relation(fields: [gameId], references: [id])
 }

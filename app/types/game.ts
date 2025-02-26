@@ -1,9 +1,10 @@
 export default interface Game {
-  id: number; // Unique identifier for the game
-  name: string;
+  id: number;
+  title: string;
   description: string;
+  image: string;
   price: number;
   rating: number;
   createdAt: Date;
-  releaseAt: Date;
+  releaseDate: Date;
 }
