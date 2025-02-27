@@ -1,8 +1,10 @@
 "use client";
+
 import React, { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
+import { FaRegCircleUser } from "react-icons/fa6";
 
 const AuthButton = () => {
   const { data: session, status } = useSession();
@@ -19,13 +21,39 @@ const AuthButton = () => {
 
   if (session && session.user) {
     return (
-      <div className="flex items-center gap-2">
-        <span className="text-sm hidden md:inline">
-          {session.user.name || session.user.email}
-        </span>
-        <button className="btn btn-outline btn-sm" onClick={handleSignOut}>
-          Sign Out
-        </button>
+      <div className="dropdown dropdown-end">
+        <div
+          tabIndex={0}
+          role="button"
+          className="btn btn-ghost btn-circle avatar"
+        >
+          <div className="w-10 rounded-full">
+            {session?.user?.image ? (
+              <img src={session.user.image} alt="User Avatar" />
+            ) : (
+              <div className="flex items-center justify-center h-full bg-slate-400 text-primary-content">
+                <FaRegCircleUser size="1.8rem" />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <ul
+          tabIndex={0}
+          className="menu dropdown-content z-[1] p-2 shadow bg-sky-500 rounded-box w-52 mt-4"
+        >
+          <li className="menu-title px-4 py-2 text-lg text-black">
+            <span className="font-bold ">
+              Hi,{" "}
+              {session.user.name || session.user.email?.split("@")[0] || "User"}
+            </span>
+          </li>
+          <li className="px-2">
+            <button onClick={handleSignOut} className="py-2 text-red-600">
+              Sign Out
+            </button>
+          </li>
+        </ul>
       </div>
     );
   }
@@ -33,7 +61,7 @@ const AuthButton = () => {
   return (
     <>
       <button
-        className="btn btn-primary btn-sm"
+        className="btn btn-ghost bg-slate-500 btn-sm"
         onClick={() => {
           setAuthMode("signin");
           setIsOpen(true);

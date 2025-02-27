@@ -1,21 +1,22 @@
-import { handleRequest } from "@/app/lib/apiHandler";
 import { cartSchema } from "@/app/lib/schema";
 import { prisma } from "@/prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: { userId: string } }
 ) {
-  const userId = parseInt(params.userId);
+  // Access the params through context
+  const { userId } = context.params;
+  const userIdNum = parseInt(userId);
 
   try {
-    const user = await prisma.users.findUnique({ where: { id: userId } });
+    const user = await prisma.users.findUnique({ where: { id: userIdNum } });
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
     const cart = await prisma.carts.findMany({
-      where: { userId },
+      where: { userId: userIdNum },
       include: { game: true }, // Include game details
     });
 
@@ -30,18 +31,20 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: { userId: string } }
 ) {
-  const userId = parseInt(params.userId);
+  // Access the params through context
+  const { userId } = context.params;
+  const userIdNum = parseInt(userId);
 
-  if (isNaN(userId)) {
+  if (isNaN(userIdNum)) {
     return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
   }
 
   const body = await request.json();
   const validation = cartSchema.safeParse(body);
   if (!validation.success)
-    return NextResponse.json(validation?.error.errors, {
+    return NextResponse.json(validation.error.errors, {
       status: 400,
     });
 

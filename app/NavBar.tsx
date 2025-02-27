@@ -14,8 +14,8 @@ const NavBar = () => {
         </Link>
       </div>
       <div className="flex-none gap-2">
-        <Cart />
         <AuthButton />
+        <Cart />
       </div>
     </div>
   );
