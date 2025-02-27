@@ -40,6 +40,7 @@ const GameCard = ({ game }: GameCardProps) => {
       <div className="card-body">
         <h2 className="card-title">{game.title}</h2>
         <p>{game.description}</p>
+        <div className="badge badge-info badge-lg">${game.price}</div>
         <div className="card-actions justify-end">
           <button className="btn bg-green-500" onClick={handleAddToCart}>
             {loading ? "Adding..." : "Add to Cart"}
