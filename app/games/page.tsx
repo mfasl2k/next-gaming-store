@@ -12,7 +12,7 @@ const GamesPage = async () => {
   );
 
   return (
-    <div className="flex flex-wrap gap-4">
+    <div className="flex flex-wrap gap-4 justify-center">
       {sortedGames.map((game) => (
         <GameCard key={game.id} game={game} />
       ))}

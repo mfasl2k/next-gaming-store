@@ -24,7 +24,6 @@ export const authConfig = {
             password: credentials.password,
           });
 
-          // Find user in the database
           const user = await prisma.users.findUnique({
             where: { email },
           });
@@ -33,7 +32,6 @@ export const authConfig = {
             return null;
           }
 
-          // Verify password
           const passwordsMatch = await verifyPassword(password, user.password);
 
           if (!passwordsMatch) {
@@ -43,7 +41,7 @@ export const authConfig = {
           return {
             id: user.id.toString(),
             email: user.email,
-            // Add any other user properties you need
+            role: user.role || "USER",
           };
         } catch (error) {
           if (error instanceof ZodError) {
@@ -60,16 +58,46 @@ export const authConfig = {
     async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.role = token.role;
       }
       return session;
     },
   },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
+  session: {
+    strategy: "jwt" as "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  secret: process.env.AUTH_SECRET,
 };
 
 export const { handlers, signIn, signOut, auth } = NextAuth(authConfig);
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      name?: string | null;
+      email?: string | null;
+      image?: string | null;
+      role?: string;
+    };
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role?: string;
+  }
+}

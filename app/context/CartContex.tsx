@@ -32,7 +32,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [cartCount, setCartCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load cart from API when session changes or on first load
   useEffect(() => {
     const fetchCart = async () => {
       setIsLoading(true);
@@ -44,9 +43,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
           if (response.ok) {
             const cartData = await response.json();
 
-            // Format the data from API to match our CartItem structure
-            // This assumes your API returns cart items with game objects
-            // Adjust the mapping based on your actual API response structure
             const formattedCartItems = cartData.map((item: any) => ({
               game: item.game,
               quantity: item.quantity,
@@ -67,7 +63,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
             }
           }
         } else {
-          // For guest users - use localStorage
           const guestCart = localStorage.getItem("guest-cart");
           if (guestCart) {
             const parsedCart = JSON.parse(guestCart);
@@ -80,7 +75,6 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         }
       } catch (error) {
         console.error("Failed to fetch cart:", error);
-        // Clear the cart on error to prevent stale data
         setCartItems([]);
         setCartCount(0);
       } finally {
@@ -99,9 +93,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const addToCart = async (game: Game, quantity: number) => {
     setIsLoading(true);
     try {
-      // For logged-in users
       if (session?.user?.id) {
-        // Update database first
         const res = await fetch(`/api/carts/${session.user.id}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

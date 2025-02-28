@@ -3,66 +3,84 @@ import { handleRequest } from "@/app/lib/apiHandler";
 import { signInSchema, userSchema } from "@/app/lib/schema";
 import { prisma } from "@/prisma/client";
 import { saltAndHashPassword } from "@/app/lib/bcryptHandler";
+import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
+import User from "@/app/types/user";
 
 export async function GET(request: NextRequest) {
-  return handleRequest(request, "users");
+  const middlewareResponse = await adminRoute()(request);
+  if (middlewareResponse.status !== 200) {
+    return middlewareResponse;
+  }
+
+  try {
+    const users = await prisma.users.findMany({
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    return NextResponse.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
+export async function POST(request: NextRequest) {
+  const middlewareResponse = await publicRoute()(request);
+  if (middlewareResponse.status !== 200) {
+    return middlewareResponse;
+  }
 
-    // Validate request body
-    const validation = signInSchema.safeParse(body);
+  try {
+    const body = await request.json();
+    const validation = userSchema.safeParse(body);
+
     if (!validation.success) {
-      return NextResponse.json(
-        {
-          message: "Validation error",
-          errors: validation.error.errors,
-        },
-        { status: 400 }
-      );
+      return NextResponse.json(validation.error.errors, {
+        status: 400,
+      });
     }
 
-    const { email, password } = validation.data;
-
-    // Check if user already exists
     const existingUser = await prisma.users.findUnique({
-      where: { email },
+      where: { email: body.email },
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { message: "User with this email already exists" },
+        { error: "User with this email already exists" },
         { status: 409 }
       );
     }
 
-    // Hash the password
-    const hashedPassword = await saltAndHashPassword(password);
+    const hashedPassword = await saltAndHashPassword(body.password);
 
-    // Create the user
     const newUser = await prisma.users.create({
       data: {
-        email,
+        ...body,
         password: hashedPassword,
+        role: "USER", // Default role
+      },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        // Exclude password from response
       },
     });
 
-    // Remove the password before returning
-    const { password: _, ...userWithoutPassword } = newUser;
-
-    return NextResponse.json(
-      {
-        message: "User created successfully",
-        user: userWithoutPassword,
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(newUser, { status: 201 });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error("Error creating user:", error);
     return NextResponse.json(
-      { message: "Internal server error" },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }

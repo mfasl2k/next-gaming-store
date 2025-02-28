@@ -73,7 +73,7 @@ const GameCard = ({ game }: GameCardProps) => {
   };
 
   return (
-    <div className="card card-compact bg-base-100 w-96 shadow-xl">
+    <div className="card card-compact bg-base-100 w-72 shadow-xl">
       <figure className="relative w-full h-48 overflow-hidden">
         {!imageError ? (
           <img
