@@ -3,12 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
 
-export async function GET(request: NextRequest) {
-  const middlewareResponse = await publicRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
+async function getAllGames(request: NextRequest) {
   try {
     const games = await prisma.games.findMany();
     return NextResponse.json(games);
@@ -21,12 +16,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const middlewareResponse = await adminRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
+export const GET = publicRoute(getAllGames);
 
+async function createGame(request: NextRequest) {
   try {
     const data = await request.json();
 
@@ -44,15 +36,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PATCH(
+export const POST = adminRoute(createGame);
+
+async function updateGame(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
-  const middlewareResponse = await adminRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { id } = context.params;
   const gameId = parseInt(id);
 
@@ -74,15 +63,12 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
+export const PATCH = adminRoute(updateGame);
+
+async function deleteGame(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
-  const middlewareResponse = await adminRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { id } = context.params;
   const gameId = parseInt(id);
 
@@ -100,3 +86,5 @@ export async function DELETE(
     );
   }
 }
+
+export const DELETE = adminRoute(deleteGame);

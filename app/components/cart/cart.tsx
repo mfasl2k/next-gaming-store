@@ -3,7 +3,7 @@
 import React from "react";
 import { GrCart } from "react-icons/gr";
 import Link from "next/link";
-import { useCart } from "../context/CartContex";
+import { useCart } from "../../context/cart/cart-context";
 
 const Cart = () => {
   const { cartItems, cartCount } = useCart();

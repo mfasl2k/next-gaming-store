@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import Game from "../types/game";
-import { useCart } from "../context/CartContex";
+import { useCart } from "../context/cart/cart-context";
 
 interface GameCardProps {
   game: Game;

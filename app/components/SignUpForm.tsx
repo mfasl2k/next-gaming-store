@@ -3,10 +3,16 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 interface SignUpFormProps {
+  isModal?: boolean;
   onSuccess?: () => void;
+  onError?: (message: string) => void;
 }
 
-const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
+const SignUpForm: React.FC<SignUpFormProps> = ({
+  isModal = true,
+  onSuccess,
+  onError,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,12 +28,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
 
     // Validation
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      const errorMsg = "Passwords do not match";
+      setError(errorMsg);
+      if (onError) onError(errorMsg);
       return;
     }
 
     if (password.length < 8) {
-      setError("Password must be at least 8 characters long");
+      const errorMsg = "Password must be at least 8 characters long";
+      setError(errorMsg);
+      if (onError) onError(errorMsg);
       return;
     }
 
@@ -59,17 +69,27 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
       setPassword("");
       setConfirmPassword("");
 
-      // After 2 seconds, redirect to sign in
+      // After 2 seconds, handle success
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
+        } else if (!isModal) {
+          // If it's a page and no specific success handler, redirect to login
+          const urlParams = new URLSearchParams(window.location.search);
+          const callbackUrl = urlParams.get("callbackUrl") || "/";
+
+          router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
         }
       }, 2000);
     } catch (error) {
       console.error("Sign up error:", error);
-      setError(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
+      const errorMsg =
+        error instanceof Error ? error.message : "An unexpected error occurred";
+      setError(errorMsg);
+
+      if (onError) {
+        onError(errorMsg);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -77,7 +97,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-2xl font-bold mb-2">Create Account</h2>
+      {!isModal && <h2 className="text-2xl font-bold mb-2">Create Account</h2>}
 
       {error && (
         <div className="alert alert-error">

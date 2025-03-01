@@ -1,4 +1,3 @@
-// app/lib/authMiddleware.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "../auth";
 import { getToken } from "next-auth/jwt";
@@ -49,20 +48,39 @@ export async function authMiddleware(
   return NextResponse.next();
 }
 
-export function protectedRoute() {
-  return async (request: NextRequest) => {
-    return authMiddleware(request);
+export function protectedRoute<T extends Record<string, unknown>>(
+  handler: (req: NextRequest, context: T) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context: T) => {
+    const result = await authMiddleware(request);
+
+    if (result.status !== 200) {
+      return result;
+    }
+
+    return handler(request, context);
   };
 }
 
-export function adminRoute() {
-  return async (request: NextRequest) => {
-    return authMiddleware(request, { roles: [Role.ADMIN] });
+export function adminRoute<T extends Record<string, unknown>>(
+  handler: (req: NextRequest, context: T) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context: T) => {
+    const result = await authMiddleware(request, { roles: [Role.ADMIN] });
+
+    if (result.status !== 200) {
+      return result;
+    }
+
+    return handler(request, context);
   };
 }
 
-export function publicRoute() {
-  return async (request: NextRequest) => {
-    return authMiddleware(request, { isPublic: true });
+export function publicRoute<T extends Record<string, unknown>>(
+  handler: (req: NextRequest, context: T) => Promise<NextResponse>
+) {
+  return async (request: NextRequest, context: T) => {
+    await authMiddleware(request, { isPublic: true });
+    return handler(request, context);
   };
 }

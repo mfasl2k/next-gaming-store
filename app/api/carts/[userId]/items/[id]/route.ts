@@ -3,15 +3,10 @@ import { prisma } from "@/prisma/client";
 import { protectedRoute } from "@/app/lib/authMiddleware";
 import { checkCartAccess } from "../../route";
 
-export async function DELETE(
+async function removeCartItem(
   request: NextRequest,
   context: { params: { userId: string; gameId: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { userId, gameId } = context.params;
   const userIdNum = parseInt(userId);
   const gameIdNum = parseInt(gameId);
@@ -48,3 +43,5 @@ export async function DELETE(
     );
   }
 }
+
+export const DELETE = protectedRoute(removeCartItem);

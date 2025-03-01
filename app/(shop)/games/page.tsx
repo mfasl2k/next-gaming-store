@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Game from "../types/game";
-import GameCard from "../components/GameCard";
+import Game from "../../types/game";
+import GameCard from "../../components/GameCard";
 
 const GamesPage = async () => {
   const data = await fetch("http://localhost:3000/api/games", {

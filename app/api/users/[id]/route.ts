@@ -17,15 +17,10 @@ async function checkUserAccess(request: NextRequest, requestedUserId: number) {
   return token?.id === requestedUserId.toString();
 }
 
-export async function GET(
+async function getUserById(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { id } = context.params;
   const userId = parseInt(id);
 
@@ -62,16 +57,12 @@ export async function GET(
     );
   }
 }
+export const GET = protectedRoute(getUserById);
 
-export async function PATCH(
+async function updateUser(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { id } = context.params;
   const userId = parseInt(id);
 
@@ -121,15 +112,12 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
+export const PATCH = protectedRoute(updateUser);
+
+async function deleteUser(
   request: NextRequest,
   context: { params: { id: string } }
 ) {
-  const middlewareResponse = await adminRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { id } = context.params;
   const userId = parseInt(id);
 
@@ -151,3 +139,5 @@ export async function DELETE(
     );
   }
 }
+
+export const DELETE = adminRoute(deleteUser);

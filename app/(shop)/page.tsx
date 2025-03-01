@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
+import GamesPage from "./games/page";
 
 export default function Home() {
-  redirect("/games");
-  return null;
+  return <GamesPage />;
 }

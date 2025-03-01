@@ -6,12 +6,7 @@ import { saltAndHashPassword } from "@/app/lib/bcryptHandler";
 import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
 import User from "@/app/types/user";
 
-export async function GET(request: NextRequest) {
-  const middlewareResponse = await adminRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
+async function getUsers(request: NextRequest) {
   try {
     const users = await prisma.users.findMany({
       select: {
@@ -32,12 +27,9 @@ export async function GET(request: NextRequest) {
   }
 }
 
-export async function POST(request: NextRequest) {
-  const middlewareResponse = await publicRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
+export const GET = adminRoute(getUsers);
 
+async function createUser(request: NextRequest) {
   try {
     const body = await request.json();
     const validation = userSchema.safeParse(body);
@@ -85,3 +77,5 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const POST = publicRoute(createUser);

@@ -4,10 +4,16 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 interface SignInFormProps {
+  isModal?: boolean;
   onSuccess?: () => void;
+  onError?: (message: string) => void;
 }
 
-const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
+const SignInForm: React.FC<SignInFormProps> = ({
+  isModal = true,
+  onSuccess,
+  onError,
+}) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -21,26 +27,55 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
 
     try {
       const result = await signIn("credentials", {
-        redirect: false,
+        redirect: false, // Always handle redirects manually for both modal and page
         email,
         password,
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        const errorMessage = "Invalid email or password";
+        setError(errorMessage);
+
+        // Call the onError prop if provided
+        if (onError) {
+          onError(errorMessage);
+        }
+
         setIsLoading(false);
         return;
       }
 
       if (result?.ok) {
+        // Call the onSuccess callback if provided
         if (onSuccess) {
           onSuccess();
         }
-        router.refresh();
+
+        // If it's a page (not a modal) and no specific success handler,
+        // refresh the page to reflect the authenticated state
+        if (!isModal && !onSuccess) {
+          router.refresh();
+
+          // Get the callback URL from the query parameters if available
+          const urlParams = new URLSearchParams(window.location.search);
+          const callbackUrl = urlParams.get("callbackUrl") || "/";
+
+          // Navigate to the callback URL
+          router.push(decodeURIComponent(callbackUrl));
+        } else {
+          // Just refresh the page data in the background for modal case
+          router.refresh();
+        }
       }
     } catch (error) {
       console.error("Sign in error:", error);
-      setError("An unexpected error occurred");
+      const errorMessage = "An unexpected error occurred";
+      setError(errorMessage);
+
+      // Call the onError prop if provided
+      if (onError) {
+        onError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +83,7 @@ const SignInForm: React.FC<SignInFormProps> = ({ onSuccess }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-2xl font-bold mb-2">Sign In</h2>
+      {!isModal && <h2 className="text-2xl font-bold mb-2">Sign In</h2>}
 
       {error && (
         <div className="alert alert-error">

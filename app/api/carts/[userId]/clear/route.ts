@@ -3,15 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkCartAccess } from "../route";
 import { prisma } from "@/prisma/client";
 
-export async function DELETE(
+async function removeAllCartItem(
   request: NextRequest,
   context: { params: { userId: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { userId } = context.params;
   const userIdNum = parseInt(userId);
 
@@ -37,3 +32,5 @@ export async function DELETE(
     );
   }
 }
+
+export const DELETE = protectedRoute(removeAllCartItem);

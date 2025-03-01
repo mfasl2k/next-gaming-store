@@ -8,7 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import { useSession } from "next-auth/react";
-import Game from "../types/game";
+import Game from "../../types/game";
 
 interface CartItem {
   game: Game;

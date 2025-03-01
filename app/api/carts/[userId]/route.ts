@@ -20,15 +20,10 @@ export async function checkCartAccess(
   return token?.id === requestedUserId.toString();
 }
 
-export async function GET(
+async function getCartByUser(
   request: NextRequest,
   context: { params: { userId: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const userId = await context.params.userId;
   const userIdNum = parseInt(userId);
 
@@ -60,15 +55,12 @@ export async function GET(
   }
 }
 
-export async function POST(
+export const GET = protectedRoute(getCartByUser);
+
+async function addToCart(
   request: NextRequest,
   context: { params: { userId: string } }
 ) {
-  const middlewareResponse = await protectedRoute()(request);
-  if (middlewareResponse.status !== 200) {
-    return middlewareResponse;
-  }
-
   const { userId } = context.params;
   const userIdNum = parseInt(userId);
 
@@ -110,3 +102,5 @@ export async function POST(
 
   return NextResponse.json(createdCart, { status: 201 });
 }
+
+export const POST = protectedRoute(addToCart);
