@@ -2,197 +2,169 @@
 
 import React, {
   createContext,
-  useContext,
   useState,
+  useContext,
   useEffect,
   ReactNode,
 } from "react";
+import { toast } from "react-hot-toast";
 import { useSession } from "next-auth/react";
-import Game from "../../types/game";
+import { useRouter } from "next/navigation";
+import Game from "@/app/types/game";
 
 interface CartItem {
+  id?: number;
   game: Game;
   quantity: number;
 }
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (game: Game, quantity: number) => Promise<void>;
-  removeFromCart: (gameId: number) => void;
-  clearCart: () => void;
   cartCount: number;
   isLoading: boolean;
+  isInCart: (gameId: number) => boolean;
+  addItem: (game: Game) => Promise<void>;
+  removeItem: (gameId: number) => Promise<void>;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const { data: session } = useSession();
+export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [cartCount, setCartCount] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  const cartCount = cartItems.length;
+
+  const isInCart = (gameId: number) => {
+    return cartItems.some((item) => item.game.id === gameId);
+  };
 
   useEffect(() => {
-    const fetchCart = async () => {
-      setIsLoading(true);
-      try {
-        if (session?.user?.id) {
-          // Fetch cart from database for logged-in users
+    async function fetchCart() {
+      if (status === "authenticated" && session?.user?.id) {
+        setIsLoading(true);
+        try {
           const response = await fetch(`/api/carts/${session.user.id}`);
 
           if (response.ok) {
-            const cartData = await response.json();
-
-            const formattedCartItems = cartData.map((item: any) => ({
-              game: item.game,
-              quantity: item.quantity,
-            }));
-
-            setCartItems(formattedCartItems);
-            calculateCartCount(formattedCartItems);
+            const data = await response.json();
+            setCartItems(data);
           } else {
-            // If API call fails, try fallback to localStorage
-            console.error(
-              "Failed to fetch cart from API, using local fallback"
-            );
-            const storedCart = localStorage.getItem(`cart-${session.user.id}`);
-            if (storedCart) {
-              const parsedCart = JSON.parse(storedCart);
-              setCartItems(parsedCart);
-              calculateCartCount(parsedCart);
-            }
+            console.error("Failed to fetch cart:", await response.text());
           }
-        } else {
-          const guestCart = localStorage.getItem("guest-cart");
-          if (guestCart) {
-            const parsedCart = JSON.parse(guestCart);
-            setCartItems(parsedCart);
-            calculateCartCount(parsedCart);
-          } else {
-            setCartItems([]);
-            setCartCount(0);
+        } catch (error) {
+          console.error("Error fetching cart:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (status === "unauthenticated") {
+        const savedCart = localStorage.getItem("cart");
+        if (savedCart) {
+          try {
+            setCartItems(JSON.parse(savedCart));
+          } catch (error) {
+            console.error("Failed to parse cart from localStorage:", error);
           }
         }
-      } catch (error) {
-        console.error("Failed to fetch cart:", error);
-        setCartItems([]);
-        setCartCount(0);
-      } finally {
-        setIsLoading(false);
       }
-    };
+    }
 
     fetchCart();
-  }, [session]);
+  }, [session, status]);
 
-  const calculateCartCount = (items: CartItem[]) => {
-    const count = items.reduce((total, item) => total + item.quantity, 0);
-    setCartCount(count);
-  };
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      localStorage.setItem("cart", JSON.stringify(cartItems));
+    }
+  }, [cartItems, status]);
 
-  const addToCart = async (game: Game, quantity: number) => {
+  const addItem = async (game: Game) => {
+    if (isInCart(game.id)) {
+      toast.success(`${game.title} is already in your cart`);
+      return;
+    }
+
     setIsLoading(true);
+
     try {
-      if (session?.user?.id) {
-        const res = await fetch(`/api/carts/${session.user.id}`, {
+      if (status === "authenticated" && session?.user?.id) {
+        const response = await fetch(`/api/carts/${session.user.id}`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({
             gameId: game.id,
-            quantity,
-            userId: parseInt(session.user.id),
           }),
         });
 
-        if (!res.ok) {
-          const errorData = await res.json();
-          console.error("Cart API error:", errorData);
-          throw new Error("Failed to update cart in database");
+        if (!response.ok) {
+          throw new Error("Failed to add game to cart");
         }
 
-        // After successfully updating the database, update local state
-        const existingItemIndex = cartItems.findIndex(
-          (item) => item.game.id === game.id
+        // Refresh cart data
+        const updatedCartResponse = await fetch(
+          `/api/carts/${session.user.id}`
         );
-        let updatedCartItems;
-
-        if (existingItemIndex >= 0) {
-          updatedCartItems = [...cartItems];
-          updatedCartItems[existingItemIndex].quantity += quantity;
-        } else {
-          updatedCartItems = [...cartItems, { game, quantity }];
+        if (updatedCartResponse.ok) {
+          const updatedCart = await updatedCartResponse.json();
+          setCartItems(updatedCart);
         }
-
-        setCartItems(updatedCartItems);
-        calculateCartCount(updatedCartItems);
-
-        // Also save to localStorage as fallback
-        localStorage.setItem(
-          `cart-${session.user.id}`,
-          JSON.stringify(updatedCartItems)
-        );
+      } else if (status === "unauthenticated") {
+        setCartItems((prevItems) => [...prevItems, { game, quantity: 1 }]);
       } else {
-        // For guest users - only update localStorage
-        const existingItemIndex = cartItems.findIndex(
-          (item) => item.game.id === game.id
-        );
-        let updatedCartItems;
-
-        if (existingItemIndex >= 0) {
-          updatedCartItems = [...cartItems];
-          updatedCartItems[existingItemIndex].quantity += quantity;
-        } else {
-          updatedCartItems = [...cartItems, { game, quantity }];
-        }
-
-        setCartItems(updatedCartItems);
-        calculateCartCount(updatedCartItems);
-        localStorage.setItem("guest-cart", JSON.stringify(updatedCartItems));
+        router.push("/login");
+        return;
       }
+
+      toast.success(`Added ${game.title} to cart`);
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      throw error;
+      console.error("Error adding game to cart:", error);
+      toast.error("Failed to add game to cart");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const removeFromCart = async (gameId: number) => {
+  const removeItem = async (gameId: number) => {
     setIsLoading(true);
+
     try {
-      if (session?.user?.id) {
-        // Remove from database first
-        const res = await fetch(
+      if (status === "authenticated" && session?.user?.id) {
+        const response = await fetch(
           `/api/carts/${session.user.id}/items/${gameId}`,
           {
             method: "DELETE",
           }
         );
 
-        if (!res.ok) {
-          console.error("Failed to remove item from database cart");
-          throw new Error("Failed to remove item from cart");
+        if (!response.ok) {
+          throw new Error("Failed to remove game from cart");
         }
-      }
 
-      // Update local state
-      const updatedCartItems = cartItems.filter(
-        (item) => item.game.id !== gameId
-      );
-      setCartItems(updatedCartItems);
-      calculateCartCount(updatedCartItems);
-
-      // Update localStorage based on user status
-      if (session?.user?.id) {
-        localStorage.setItem(
-          `cart-${session.user.id}`,
-          JSON.stringify(updatedCartItems)
+        setCartItems((prevItems) =>
+          prevItems.filter((item) => item.game.id !== gameId)
         );
+      } else if (status === "unauthenticated") {
+        const itemToRemove = cartItems.find((item) => item.game.id === gameId);
+
+        setCartItems((prevItems) =>
+          prevItems.filter((item) => item.game.id !== gameId)
+        );
+
+        if (itemToRemove) {
+          toast.success(`Removed ${itemToRemove.game.title} from cart`);
+        }
       } else {
-        localStorage.setItem("guest-cart", JSON.stringify(updatedCartItems));
+        router.push("/login");
+        return;
       }
     } catch (error) {
-      console.error("Error removing from cart:", error);
+      console.error("Error removing game from cart:", error);
+      toast.error("Failed to remove game from cart");
     } finally {
       setIsLoading(false);
     }
@@ -200,56 +172,45 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
   const clearCart = async () => {
     setIsLoading(true);
+
     try {
-      if (session?.user?.id) {
-        // Clear cart in database
-        const res = await fetch(`/api/carts/${session.user.id}/clear`, {
+      if (status === "authenticated" && session?.user?.id) {
+        const response = await fetch(`/api/carts/${session.user.id}/clear`, {
           method: "DELETE",
         });
 
-        if (!res.ok) {
-          console.error("Failed to clear cart in database");
+        if (!response.ok) {
           throw new Error("Failed to clear cart");
         }
       }
 
-      // Clear local state
       setCartItems([]);
-      setCartCount(0);
-
-      // Clear localStorage based on user status
-      if (session?.user?.id) {
-        localStorage.removeItem(`cart-${session.user.id}`);
-      } else {
-        localStorage.removeItem("guest-cart");
-      }
+      toast.success("Cart cleared");
     } catch (error) {
       console.error("Error clearing cart:", error);
+      toast.error("Failed to clear cart");
     } finally {
       setIsLoading(false);
     }
   };
 
-  return (
-    <CartContext.Provider
-      value={{
-        cartItems,
-        addToCart,
-        removeFromCart,
-        clearCart,
-        cartCount,
-        isLoading,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
-  );
-};
+  const value = {
+    cartItems,
+    cartCount,
+    isLoading,
+    isInCart,
+    addItem,
+    removeItem,
+    clearCart,
+  };
 
-export const useCart = () => {
+  return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
+}
+
+export function useCart() {
   const context = useContext(CartContext);
   if (context === undefined) {
     throw new Error("useCart must be used within a CartProvider");
   }
   return context;
-};
+}

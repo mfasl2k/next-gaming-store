@@ -18,8 +18,8 @@ const Cart = () => {
     <div className="dropdown dropdown-end">
       <div tabIndex={0} role="button" className="btn btn-ghost btn-circle">
         <div className="indicator">
-          <GrCart size="1.5rem" />
           <span className="badge badge-sm indicator-item">{cartCount}</span>
+          <GrCart size="1.5rem" />
         </div>
       </div>
 

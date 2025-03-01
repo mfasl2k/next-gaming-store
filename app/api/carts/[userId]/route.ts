@@ -20,42 +20,50 @@ export async function checkCartAccess(
   return token?.id === requestedUserId.toString();
 }
 
-async function getCartByUser(
+async function getCartItems(
   request: NextRequest,
   context: { params: { userId: string } }
 ) {
-  const userId = await context.params.userId;
+  const { userId } = context.params;
   const userIdNum = parseInt(userId);
 
   const hasAccess = await checkCartAccess(request, userIdNum);
   if (!hasAccess) {
     return NextResponse.json(
-      { error: "You don't have permission to access this cart" },
+      { error: "You don't have permission to view this cart" },
       { status: 403 }
     );
   }
 
   try {
-    const user = await prisma.users.findUnique({ where: { id: userIdNum } });
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const cart = await prisma.carts.findMany({
-      where: { userId: userIdNum },
-      include: { game: true }, // Include game details
+    // Get cart items with game details
+    const cartItems = await prisma.carts.findMany({
+      where: {
+        userId: userIdNum,
+      },
+      include: {
+        game: true,
+      },
     });
 
-    return NextResponse.json(cart, { status: 200 });
+    // Transform to expected format
+    const formattedItems = cartItems.map((item) => ({
+      id: item.id,
+      game: item.game,
+      quantity: 1, // Always 1 in the single-copy approach
+    }));
+
+    return NextResponse.json(formattedItems);
   } catch (error) {
+    console.error("Error fetching cart items:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error },
+      { error: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
 
-export const GET = protectedRoute(getCartByUser);
+export const GET = protectedRoute(getCartItems);
 
 async function addToCart(
   request: NextRequest,
@@ -72,35 +80,60 @@ async function addToCart(
     );
   }
 
-  if (isNaN(userIdNum)) {
-    return NextResponse.json({ error: "Invalid user ID" }, { status: 400 });
-  }
+  try {
+    const { gameId } = await request.json();
 
-  const body = await request.json();
-  const validation = cartSchema.safeParse(body);
-  if (!validation.success)
-    return NextResponse.json(validation.error.errors, {
-      status: 400,
+    if (!gameId) {
+      return NextResponse.json(
+        { error: "Game ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // Check if game exists
+    const game = await prisma.games.findUnique({
+      where: { id: gameId },
     });
 
-  const existingCart = await prisma.carts.findFirst({
-    where: { userId: body.userId, gameId: body.gameId },
-  });
+    if (!game) {
+      return NextResponse.json({ error: "Game not found" }, { status: 404 });
+    }
 
-  if (existingCart) {
-    const updatedCart = await prisma.carts.update({
-      where: { id: existingCart.id },
-      data: { quantity: existingCart.quantity + body.quantity },
+    // Check if game is already in cart
+    const existingItem = await prisma.carts.findFirst({
+      where: {
+        userId: userIdNum,
+        gameId,
+      },
     });
 
-    return NextResponse.json(updatedCart, { status: 200 });
+    if (existingItem) {
+      return NextResponse.json(
+        { success: true, message: "Game already in cart", item: existingItem },
+        { status: 200 }
+      );
+    }
+
+    // Add to cart with quantity 1
+    const cartItem = await prisma.carts.create({
+      data: {
+        userId: userIdNum,
+        gameId,
+        quantity: 1, // Always 1 in the single-copy approach
+      },
+      include: {
+        game: true,
+      },
+    });
+
+    return NextResponse.json({ success: true, item: cartItem });
+  } catch (error) {
+    console.error("Error adding to cart:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-
-  const createdCart = await prisma.carts.create({
-    data: body,
-  });
-
-  return NextResponse.json(createdCart, { status: 201 });
 }
 
 export const POST = protectedRoute(addToCart);

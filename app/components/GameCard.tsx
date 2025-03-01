@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-
 import toast from "react-hot-toast";
 import { useSession } from "next-auth/react";
 import Game from "../types/game";
 import { useCart } from "../context/cart/cart-context";
+import Link from "next/link";
 
 interface GameCardProps {
   game: Game;
@@ -13,14 +13,18 @@ interface GameCardProps {
 
 const GameCard = ({ game }: GameCardProps) => {
   const { data: session, status } = useSession();
-  const { addToCart, isLoading: cartLoading } = useCart();
+  const { addItem, isInCart, isLoading: cartLoading } = useCart();
   const [loading, setLoading] = useState(false);
   const [imageError, setImageError] = useState(false);
 
+  const gameInCart = isInCart(game.id);
+
   const handleAddToCart = async () => {
-    // Check if user is logged in
+    if (gameInCart) {
+      return;
+    }
+
     if (status === "unauthenticated") {
-      // Show a toast notification directing to use the auth button
       toast.error("Please sign in to add items to cart", {
         duration: 4000,
         icon: "🔑",
@@ -28,7 +32,6 @@ const GameCard = ({ game }: GameCardProps) => {
       return;
     }
 
-    // Make sure we have a user ID
     if (!session?.user?.id) {
       toast.error("User session error");
       return;
@@ -36,38 +39,14 @@ const GameCard = ({ game }: GameCardProps) => {
 
     setLoading(true);
     try {
-      // Update backend cart
-      const userId = session.user.id;
-
-      const res = await fetch(`/api/carts/${userId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          gameId: game.id,
-          quantity: 1,
-          userId: parseInt(userId),
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Cart API error:", errorData);
-        throw new Error("Failed to add game to cart");
-      }
-
-      // Update cart context
-      await addToCart(game, 1);
-
-      toast.success("Game added to cart! 🎮");
+      await addItem(game);
     } catch (error) {
       console.error("Add to cart error:", error);
-      toast.error("Error adding to cart ❌");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fallback image if the main image fails to load
   const handleImageError = () => {
     setImageError(true);
   };
@@ -95,13 +74,22 @@ const GameCard = ({ game }: GameCardProps) => {
         <p className="line-clamp-2">{game.description}</p>
         <div className="badge badge-info badge-lg">${game.price}</div>
         <div className="card-actions justify-end">
-          <button
-            className="btn bg-green-500"
-            onClick={handleAddToCart}
-            disabled={loading || cartLoading}
-          >
-            {loading ? "Adding..." : "Add to Cart"}
-          </button>
+          {gameInCart ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full justify-between items-center">
+              <div className="badge badge-info badge-lg">In Cart</div>
+              <Link href="/cart" className="btn btn-info btn-sm">
+                View Cart
+              </Link>
+            </div>
+          ) : (
+            <button
+              className="btn bg-green-500"
+              onClick={handleAddToCart}
+              disabled={loading || cartLoading}
+            >
+              {loading ? "Adding..." : "Add to Cart"}
+            </button>
+          )}
         </div>
       </div>
     </div>
