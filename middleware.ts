@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAdminRoute && !isAdmin) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
 
@@ -43,7 +43,6 @@ export const config = {
     "/cart",
     "/cart/:path*",
     "/admin/:path*",
-    "/user/profile/:path*",
     // Auth routes to check if already authenticated
     "/login",
     "/register",

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
-import { cartSchema } from "@/app/lib/schema";
 import { protectedRoute } from "@/app/lib/authMiddleware";
 import { getToken } from "next-auth/jwt";
 

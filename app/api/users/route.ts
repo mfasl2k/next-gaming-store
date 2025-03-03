@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleRequest } from "@/app/lib/apiHandler";
 import { signInSchema, userSchema } from "@/app/lib/schema";
 import { prisma } from "@/prisma/client";
 import { saltAndHashPassword } from "@/app/lib/bcryptHandler";

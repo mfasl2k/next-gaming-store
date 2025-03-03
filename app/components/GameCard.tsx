@@ -26,7 +26,7 @@ const GameCard = ({ game }: GameCardProps) => {
 
     if (status === "unauthenticated") {
       toast.error("Please sign in to add items to cart", {
-        duration: 4000,
+        duration: 3000,
         icon: "🔑",
       });
       return;

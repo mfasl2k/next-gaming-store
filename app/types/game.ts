@@ -4,8 +4,6 @@ export default interface Game {
   description: string;
   image: string;
   price: number;
-  rating: number;
   createdAt: Date;
   updatedAt: Date;
-  releaseDate: Date;
 }

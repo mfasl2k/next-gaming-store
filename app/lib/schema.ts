@@ -10,8 +10,6 @@ const gamesSchema = z.object({
   description: z.string().min(10),
   image: z.string().url(),
   price: z.number().positive(),
-  rating: z.number().min(0).max(5),
-  releaseDate: z.string(),
 });
 
 const cartSchema = z.object({
