@@ -27,7 +27,7 @@ const SignInForm: React.FC<SignInFormProps> = ({
 
     try {
       const result = await signIn("credentials", {
-        redirect: false, // Always handle redirects manually for both modal and page
+        redirect: false,
         email,
         password,
       });
@@ -36,7 +36,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
         const errorMessage = "Invalid email or password";
         setError(errorMessage);
 
-        // Call the onError prop if provided
         if (onError) {
           onError(errorMessage);
         }
@@ -46,24 +45,18 @@ const SignInForm: React.FC<SignInFormProps> = ({
       }
 
       if (result?.ok) {
-        // Call the onSuccess callback if provided
         if (onSuccess) {
           onSuccess();
         }
 
-        // If it's a page (not a modal) and no specific success handler,
-        // refresh the page to reflect the authenticated state
         if (!isModal && !onSuccess) {
           router.refresh();
 
-          // Get the callback URL from the query parameters if available
           const urlParams = new URLSearchParams(window.location.search);
           const callbackUrl = urlParams.get("callbackUrl") || "/";
 
-          // Navigate to the callback URL
           router.push(decodeURIComponent(callbackUrl));
         } else {
-          // Just refresh the page data in the background for modal case
           router.refresh();
         }
       }
@@ -72,7 +65,6 @@ const SignInForm: React.FC<SignInFormProps> = ({
       const errorMessage = "An unexpected error occurred";
       setError(errorMessage);
 
-      // Call the onError prop if provided
       if (onError) {
         onError(errorMessage);
       }

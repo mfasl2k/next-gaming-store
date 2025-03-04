@@ -3,7 +3,6 @@
 import React from "react";
 import { useCart } from "../../context/cart/cart-context";
 import Link from "next/link";
-import Image from "next/image";
 import { FiArrowLeft, FiShoppingCart, FiTrash2 } from "react-icons/fi";
 
 const CartPage = () => {

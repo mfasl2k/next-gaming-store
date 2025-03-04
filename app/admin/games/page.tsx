@@ -7,6 +7,7 @@ import { toast } from "react-hot-toast";
 import ActionButtons from "@/app/components/admin/ActionButtons";
 import DataTable, { ColumnDefinition } from "@/app/components/admin/DataTable";
 import Game from "@/app/types/game";
+import { GameService } from "@/app/services/game-service";
 
 export default function AdminGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -40,15 +41,7 @@ export default function AdminGamesPage() {
 
   const handleDeleteGame = async (game: Game) => {
     try {
-      const response = await fetch(`/api/games/${game.id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to delete game");
-      }
-
-      // Update local state
+      await GameService.deleteGame(game.id.toString());
       setGames(games.filter((g) => g.id !== game.id));
       toast.success(`"${game.title}" has been deleted`);
     } catch (err) {

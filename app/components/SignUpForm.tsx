@@ -44,7 +44,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
     setIsLoading(true);
 
     try {
-      // Replace with your actual sign-up API endpoint
       const response = await fetch("/api/users", {
         method: "POST",
         headers: {
@@ -64,17 +63,14 @@ const SignUpForm: React.FC<SignUpFormProps> = ({
 
       setSuccessMessage("Account created successfully!");
 
-      // Clear the form
       setEmail("");
       setPassword("");
       setConfirmPassword("");
 
-      // After 2 seconds, handle success
       setTimeout(() => {
         if (onSuccess) {
           onSuccess();
         } else if (!isModal) {
-          // If it's a page and no specific success handler, redirect to login
           const urlParams = new URLSearchParams(window.location.search);
           const callbackUrl = urlParams.get("callbackUrl") || "/";
 

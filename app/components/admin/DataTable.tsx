@@ -41,7 +41,6 @@ export default function DataTable<T>({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Filter data based on search term
   const filteredData = data.filter((item) => {
     return columns.some((column) => {
       const value = item[column.accessorKey];
@@ -50,7 +49,6 @@ export default function DataTable<T>({
     });
   });
 
-  // Pagination
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const currentData = filteredData.slice(
     (currentPage - 1) * itemsPerPage,
@@ -76,7 +74,7 @@ export default function DataTable<T>({
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
-              setCurrentPage(1); // Reset to first page on search
+              setCurrentPage(1);
             }}
           />
         </div>
@@ -189,7 +187,6 @@ export default function DataTable<T>({
 
             {Array.from({ length: totalPages }).map((_, index) => {
               const page = index + 1;
-              // Show current page, first page, last page, and 1 page before and after current
               if (
                 page === 1 ||
                 page === totalPages ||

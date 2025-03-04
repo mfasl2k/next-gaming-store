@@ -8,7 +8,6 @@ import { useCart } from "../../context/cart/cart-context";
 const Cart = () => {
   const { cartItems, cartCount } = useCart();
 
-  // Calculate total price
   const totalPrice = cartItems.reduce(
     (total, item) => total + item.game.price * item.quantity,
     0

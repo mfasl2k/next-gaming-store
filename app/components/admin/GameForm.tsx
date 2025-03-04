@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"; // Import your Zod schema
 import type { z } from "zod";
 import { gamesSchema } from "@/app/lib/schema";
 import Game from "@/app/types/game";
+import { GameService } from "@/app/services/game-service";
 
 type GameFormData = Omit<Game, "id" | "createdAt" | "updatedAt">;
 
@@ -67,34 +68,16 @@ export default function GameForm({
     setIsSubmitting(true);
 
     try {
-      const url = isEditMode ? `/api/games/${gameId}` : "/api/games";
-      const method = isEditMode ? "PATCH" : "POST";
+      const response = isEditMode
+        ? GameService.updateGame(gameId.toString(), data)
+        : GameService.createGame(data);
 
-      // Send the request
-      console.log("test");
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      // Handle errors
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save game");
-      }
-
-      // Show success message
       toast.success(
         isEditMode ? "Game updated successfully!" : "Game created successfully!"
       );
 
-      // Call success callback
       if (onSuccess) onSuccess();
 
-      // Reset form if not in edit mode
       if (!isEditMode) {
         reset();
         setPreviewImage(null);
@@ -131,7 +114,6 @@ export default function GameForm({
           )}
         </div>
 
-        {/* Price */}
         <div className="form-control w-full">
           <label className="label">
             <span className="label-text">Price</span>

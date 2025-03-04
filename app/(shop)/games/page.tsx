@@ -1,23 +1,27 @@
-import React, { useState } from "react";
-import Game from "../../types/game";
+import React from "react";
 import GameCard from "../../components/GameCard";
+import { GameService } from "@/app/services/game-service";
 
 const GamesPage = async () => {
-  const data = await fetch("http://localhost:3000/api/games", {
-    cache: "no-store",
-  });
-  const games: Game[] = await data.json();
-  const sortedGames = games.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
+  try {
+    const games = await GameService.getAllGames();
 
-  return (
-    <div className="flex flex-wrap gap-4 justify-center">
-      {sortedGames.map((game) => (
-        <GameCard key={game.id} game={game} />
-      ))}
-    </div>
-  );
+    return (
+      <div className="flex flex-wrap gap-4 justify-center">
+        {games.map((game) => (
+          <GameCard key={game.id} game={game} />
+        ))}
+      </div>
+    );
+  } catch (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg text-red-500">
+          Failed to load games. Please try again later.
+        </p>
+      </div>
+    );
+  }
 };
 
 export default GamesPage;

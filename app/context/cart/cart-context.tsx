@@ -105,7 +105,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           throw new Error("Failed to add game to cart");
         }
 
-        // Refresh cart data
         const updatedCartResponse = await fetch(
           `/api/carts/${session.user.id}`
         );

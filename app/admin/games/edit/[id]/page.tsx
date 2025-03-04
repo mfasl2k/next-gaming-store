@@ -6,6 +6,7 @@ import { FiArrowLeft, FiAlertCircle } from "react-icons/fi";
 import Link from "next/link";
 import GameForm from "@/app/components/admin/GameForm";
 import Game from "@/app/types/game";
+import { GameService } from "@/app/services/game-service";
 
 export default function EditGamePage({
   params,
@@ -16,7 +17,7 @@ export default function EditGamePage({
   const [game, setGame] = useState<Game | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const resolvedParams = React.use(params); // Unwrap params with React.use()
+  const resolvedParams = React.use(params);
   const gameId = parseInt(resolvedParams.id);
 
   useEffect(() => {
@@ -29,14 +30,9 @@ export default function EditGamePage({
 
       setIsLoading(true);
       try {
-        const response = await fetch(`/api/games/${gameId}`);
+        const response = await GameService.getGameById(gameId.toString());
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch game");
-        }
-
-        const data = await response.json();
-        setGame(data);
+        setGame(response);
         setError(null);
       } catch (err) {
         console.error("Error fetching game:", err);
