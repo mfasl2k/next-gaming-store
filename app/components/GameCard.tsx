@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Game from "../types/game";
 import { useCart } from "../context/cart/cart-context";
 import Link from "next/link";
+import Image from "next/image";
 
 interface GameCardProps {
   game: Game;
@@ -55,10 +56,12 @@ const GameCard = ({ game }: GameCardProps) => {
     <div className="card card-compact bg-base-100 w-72 shadow-xl">
       <figure className="relative w-full h-48 overflow-hidden">
         {!imageError ? (
-          <img
+          <Image
             src={game.image}
             alt={game.title}
-            className="object-cover w-full h-full"
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-cover"
             onError={handleImageError}
           />
         ) : (

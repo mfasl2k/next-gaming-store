@@ -20,9 +20,7 @@ export default function RegisterPage() {
     }
   }, [status, router, callbackUrl]);
 
-  // Handle successful registration
   const handleSuccess = () => {
-    // Redirect to login page or directly to the callback URL if auto-login happens
     router.push("/login?callbackUrl=" + encodeURIComponent(callbackUrl));
   };
 

@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
 import { FaRegCircleUser } from "react-icons/fa6";
+import Image from "next/image";
 
 const AuthButton = () => {
   const { data: session, status } = useSession();
@@ -29,7 +30,7 @@ const AuthButton = () => {
         >
           <div className="w-10 rounded-full">
             {session?.user?.image ? (
-              <img src={session.user.image} alt="User Avatar" />
+              <Image src={session.user.image} alt="User Avatar" fill />
             ) : (
               <div className="flex items-center justify-center h-full bg-slate-400 text-primary-content">
                 <FaRegCircleUser size="1.8rem" />

@@ -8,6 +8,7 @@ import ActionButtons from "@/app/components/admin/ActionButtons";
 import DataTable, { ColumnDefinition } from "@/app/components/admin/DataTable";
 import Game from "@/app/types/game";
 import { GameService } from "@/app/services/game-service";
+import Image from "next/image";
 
 export default function AdminGamesPage() {
   const [games, setGames] = useState<Game[]>([]);
@@ -57,9 +58,11 @@ export default function AdminGamesPage() {
       cell: (game) => (
         <div className="avatar">
           <div className="w-12 h-12 rounded">
-            <img
+            <Image
               src={game.image}
               alt={game.title}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   "https://via.placeholder.com/100x100?text=No+Image";

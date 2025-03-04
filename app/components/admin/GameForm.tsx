@@ -9,6 +9,7 @@ import type { z } from "zod";
 import { gamesSchema } from "@/app/lib/schema";
 import Game from "@/app/types/game";
 import { GameService } from "@/app/services/game-service";
+import Image from "next/image";
 
 type GameFormData = Omit<Game, "id" | "createdAt" | "updatedAt">;
 
@@ -158,9 +159,11 @@ export default function GameForm({
           {previewImage && (
             <div className="avatar">
               <div className="w-16 h-16 rounded">
-                <img
+                <Image
                   src={previewImage}
                   alt="Preview"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   onError={(e) => {
                     (e.target as HTMLImageElement).src =
                       "https://via.placeholder.com/100x100?text=Error";

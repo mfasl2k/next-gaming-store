@@ -4,6 +4,7 @@ import React from "react";
 import { useCart } from "../../context/cart/cart-context";
 import Link from "next/link";
 import { FiArrowLeft, FiShoppingCart, FiTrash2 } from "react-icons/fi";
+import Image from "next/image";
 
 const CartPage = () => {
   const { cartItems, cartCount, clearCart, removeItem, isLoading } = useCart();
@@ -50,10 +51,12 @@ const CartPage = () => {
               {/* Image container with fixed aspect ratio */}
               <div className="sm:w-32 h-32 flex-shrink-0">
                 <div className="w-full h-full relative">
-                  <img
+                  <Image
                     src={item.game.image}
                     alt={item.game.title}
-                    className="w-full h-full object-cover"
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    fill
                   />
                 </div>
               </div>

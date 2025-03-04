@@ -4,6 +4,7 @@ import React from "react";
 import { GrCart } from "react-icons/gr";
 import Link from "next/link";
 import { useCart } from "../../context/cart/cart-context";
+import Image from "next/image";
 
 const Cart = () => {
   const { cartItems, cartCount } = useCart();
@@ -38,9 +39,11 @@ const Cart = () => {
                     key={item.game.id}
                     className="flex items-center gap-3 py-2 border-b"
                   >
-                    <img
+                    <Image
                       src={item.game.image}
                       alt={item.game.title}
+                      width={48}
+                      height={48}
                       className="w-12 h-12 object-cover rounded flex-shrink-0"
                     />
                     <div className="flex-1 min-w-0">
