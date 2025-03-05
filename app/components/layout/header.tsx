@@ -1,7 +1,6 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { VscAccount } from "react-icons/vsc";
 import AuthButton from "../AuthButton";
 import Cart from "../cart/cart";
 

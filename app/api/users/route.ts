@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { signInSchema, userSchema } from "@/app/lib/schema";
+import { userSchema } from "@/app/lib/schema";
 import { prisma } from "@/prisma/client";
 import { saltAndHashPassword } from "@/app/lib/bcryptHandler";
 import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
-import User from "@/app/types/user";
 
-async function getUsers(request: NextRequest) {
+async function getUsers() {
   try {
     const users = await prisma.users.findMany({
       select: {

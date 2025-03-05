@@ -4,16 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 async function getGameById(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const gameId = parseInt(id);
 
   try {
     const game = await prisma.games.findUnique({
       where: { id: gameId },
     });
-    
 
     if (!game) {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
@@ -33,9 +32,9 @@ export const GET = publicRoute(getGameById);
 
 async function updateGame(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const gameId = parseInt(id);
 
   try {
@@ -60,9 +59,9 @@ export const PATCH = adminRoute(updateGame);
 
 async function deleteGame(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const gameId = parseInt(id);
 
   try {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { prisma } from "@/prisma/client";
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -75,9 +76,11 @@ export const authConfig = {
     error: "/auth/error",
   },
   session: {
+    // eslint-disable-next-line @typescript-eslint/prefer-as-const
     strategy: "jwt" as "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  trustHost: true,
   secret: process.env.AUTH_SECRET,
 };
 

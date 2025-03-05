@@ -19,18 +19,10 @@ async function checkUserAccess(request: NextRequest, requestedUserId: number) {
 
 async function getUserById(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const userId = parseInt(id);
-
-  const hasAccess = await checkUserAccess(request, userId);
-  if (!hasAccess) {
-    return NextResponse.json(
-      { error: "You don't have permission to access this user" },
-      { status: 403 }
-    );
-  }
 
   try {
     const user = await prisma.users.findUnique({
@@ -61,9 +53,9 @@ export const GET = protectedRoute(getUserById);
 
 async function updateUser(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const userId = parseInt(id);
 
   const hasAccess = await checkUserAccess(request, userId);
@@ -116,9 +108,9 @@ export const PATCH = protectedRoute(updateUser);
 
 async function deleteUser(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = context.params;
+  const { id } = await context.params;
   const userId = parseInt(id);
 
   try {

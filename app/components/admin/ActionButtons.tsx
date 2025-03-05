@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FiEdit, FiTrash2, FiEye, FiAlertTriangle } from "react-icons/fi";
+import { FiEdit, FiTrash2, FiEye } from "react-icons/fi";
 import Link from "next/link";
 
 type ActionButtonsProps<T> = {

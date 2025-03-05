@@ -4,14 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import {
-  FiMenu,
-  FiX,
-  FiHome,
-  FiUsers,
-  FiShoppingBag,
-  FiLogOut,
-} from "react-icons/fi";
+import { FiMenu, FiX, FiHome, FiShoppingBag, FiLogOut } from "react-icons/fi";
+import Footer from "../components/layout/footer";
 
 export default function AdminLayout({
   children,
@@ -100,20 +94,13 @@ export default function AdminLayout({
         </nav>
       </div>
 
-      {/* Main content */}
       <div className="lg:ml-64 flex flex-col min-h-screen">
-        {/* Desktop header */}
         <header className="hidden lg:block bg-white border-b p-4">
           <h1 className="text-xl font-bold">Admin Panel</h1>
         </header>
-
-        {/* Main content */}
         <main className="flex-grow p-4 mt-16 lg:mt-0">{children}</main>
 
-        {/* Footer */}
-        <footer className="bg-white p-4 border-t text-center text-sm text-gray-600">
-          <p>© {new Date().getFullYear()} Green Gaming Admin</p>
-        </footer>
+        <Footer />
       </div>
     </div>
   );

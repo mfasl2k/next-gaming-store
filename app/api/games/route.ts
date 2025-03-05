@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
 
-async function getAllGames(request: NextRequest) {
+async function getAllGames() {
   try {
     const games = await prisma.games.findMany();
     return NextResponse.json(games);

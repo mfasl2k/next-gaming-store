@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "../auth";
 import { getToken } from "next-auth/jwt";
 
 export enum Role {
@@ -19,9 +18,8 @@ export async function authMiddleware(
   const { roles = [], isPublic = false } = options;
 
   if (isPublic) {
-    return NextResponse.next();
+    return new NextResponse(null, { status: 200 });
   }
-
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
@@ -45,12 +43,12 @@ export async function authMiddleware(
     }
   }
 
-  return NextResponse.next();
+  return new NextResponse(null, { status: 200 });
 }
 
-export function protectedRoute<T extends Record<string, unknown>>(
-  handler: (req: NextRequest, context: T) => Promise<NextResponse>
-) {
+export function protectedRoute<
+  T extends { params: Promise<Record<string, string>> }
+>(handler: (req: NextRequest, context: T) => Promise<NextResponse>) {
   return async (request: NextRequest, context: T) => {
     const result = await authMiddleware(request);
 
@@ -62,9 +60,9 @@ export function protectedRoute<T extends Record<string, unknown>>(
   };
 }
 
-export function adminRoute<T extends Record<string, unknown>>(
-  handler: (req: NextRequest, context: T) => Promise<NextResponse>
-) {
+export function adminRoute<
+  T extends { params: Promise<Record<string, string>> }
+>(handler: (req: NextRequest, context: T) => Promise<NextResponse>) {
   return async (request: NextRequest, context: T) => {
     const result = await authMiddleware(request, { roles: [Role.ADMIN] });
 
@@ -76,9 +74,9 @@ export function adminRoute<T extends Record<string, unknown>>(
   };
 }
 
-export function publicRoute<T extends Record<string, unknown>>(
-  handler: (req: NextRequest, context: T) => Promise<NextResponse>
-) {
+export function publicRoute<
+  T extends { params: Promise<Record<string, string>> }
+>(handler: (req: NextRequest, context: T) => Promise<NextResponse>) {
   return async (request: NextRequest, context: T) => {
     await authMiddleware(request, { isPublic: true });
     return handler(request, context);

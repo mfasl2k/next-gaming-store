@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 import { protectedRoute } from "@/app/lib/authMiddleware";
-import { checkCartAccess } from "../../route";
 
 async function removeCartItem(
   request: NextRequest,
-  context: { params: { userId: string; id: string } }
+  context: { params: Promise<{ userId: string; id: string }> }
 ) {
-  const { userId, id } = context.params;
+  const { userId, id } = await context.params;
   const userIdNum = parseInt(userId);
   const itemId = parseInt(id);
 
@@ -50,19 +49,11 @@ export const DELETE = protectedRoute(removeCartItem);
 
 async function checkGameInCart(
   request: NextRequest,
-  context: { params: { userId: string; gameId: string } }
+  context: { params: Promise<{ userId: string; gameId: string }> }
 ) {
-  const { userId, gameId } = context.params;
+  const { userId, gameId } = await context.params;
   const userIdNum = parseInt(userId);
   const gameIdNum = parseInt(gameId);
-
-  const hasAccess = await checkCartAccess(request, userIdNum);
-  if (!hasAccess) {
-    return NextResponse.json(
-      { error: "You don't have permission to view this cart" },
-      { status: 403 }
-    );
-  }
 
   try {
     const cartItem = await prisma.carts.findFirst({

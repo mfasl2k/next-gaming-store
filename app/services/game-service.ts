@@ -1,11 +1,11 @@
 import Game from "../types/game";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
 export const GameService = {
   async getAllGames(): Promise<Game[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games`);
+      const response = await fetch(`/api/games`, {
+        cache: "no-store",
+      });
 
       if (!response.ok) {
         throw new Error(`Error fetching games: ${response.status}`);
@@ -24,7 +24,7 @@ export const GameService = {
 
   async getGameById(id: string): Promise<Game> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${id}`);
+      const response = await fetch(`/api/games/${id}`);
 
       if (!response.ok) {
         throw new Error(`Error fetching game: ${response.status}`);
@@ -41,7 +41,7 @@ export const GameService = {
     gameData: Omit<Game, "id" | "createdAt" | "updatedAt">
   ): Promise<Game> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games`, {
+      const response = await fetch(`/api/games`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -62,7 +62,7 @@ export const GameService = {
 
   async updateGame(id: string, gameData: Partial<Game>): Promise<Game> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${id}`, {
+      const response = await fetch(`/api/games/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +83,7 @@ export const GameService = {
 
   async deleteGame(id: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${id}`, {
+      const response = await fetch(`/api/games/${id}`, {
         method: "DELETE",
       });
 

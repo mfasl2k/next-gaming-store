@@ -1,38 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 import { protectedRoute } from "@/app/lib/authMiddleware";
-import { getToken } from "next-auth/jwt";
-
-export async function checkCartAccess(
-  request: NextRequest,
-  requestedUserId: number
-) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
-
-  if (token?.role === "ADMIN") {
-    return true;
-  }
-
-  return token?.id === requestedUserId.toString();
-}
 
 async function getCartItems(
   request: NextRequest,
-  context: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
-  const { userId } = context.params;
+  const { userId } = await context.params;
   const userIdNum = parseInt(userId);
-
-  const hasAccess = await checkCartAccess(request, userIdNum);
-  if (!hasAccess) {
-    return NextResponse.json(
-      { error: "You don't have permission to view this cart" },
-      { status: 403 }
-    );
-  }
 
   try {
     // Get cart items with game details
@@ -45,11 +20,10 @@ async function getCartItems(
       },
     });
 
-    // Transform to expected format
     const formattedItems = cartItems.map((item) => ({
       id: item.id,
       game: item.game,
-      quantity: 1, // Always 1 in the single-copy approach
+      quantity: 1,
     }));
 
     return NextResponse.json(formattedItems);
@@ -66,18 +40,10 @@ export const GET = protectedRoute(getCartItems);
 
 async function addToCart(
   request: NextRequest,
-  context: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
-  const { userId } = context.params;
+  const { userId } = await context.params;
   const userIdNum = parseInt(userId);
-
-  const hasAccess = await checkCartAccess(request, userIdNum);
-  if (!hasAccess) {
-    return NextResponse.json(
-      { error: "You don't have permission to modify this cart" },
-      { status: 403 }
-    );
-  }
 
   try {
     const { gameId } = await request.json();

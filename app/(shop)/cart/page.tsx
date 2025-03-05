@@ -25,7 +25,7 @@ const CartPage = () => {
           </div>
           <h2 className="text-xl font-semibold mb-2">Your cart is empty</h2>
           <p className="text-gray-600 mb-6">
-            Looks like you haven't added any games to your cart yet.
+            Looks like you have not added any games to your cart yet.
           </p>
           <Link href="/games" className="btn btn-primary">
             <FiArrowLeft className="mr-2" /> Browse Games
@@ -72,7 +72,7 @@ const CartPage = () => {
 
                 <div className="flex justify-end mt-3">
                   <button
-                    onClick={() => removeItem(item.game.id)}
+                    onClick={() => removeItem(item.id!)}
                     className="btn btn-sm btn-error btn-outline"
                     disabled={isLoading}
                   >

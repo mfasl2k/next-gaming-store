@@ -90,7 +90,7 @@ const AuthButton = () => {
                 <SignInForm onSuccess={() => setIsOpen(false)} />
                 <div className="text-center mt-4">
                   <p className="text-sm">
-                    Don't have an account?{" "}
+                    Don&apos;t have an account?{" "}
                     <button
                       className="text-primary hover:underline"
                       onClick={() => setAuthMode("signup")}

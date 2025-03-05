@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import { FiSave, FiX, FiImage } from "react-icons/fi";
+import { FiSave, FiX } from "react-icons/fi";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod"; // Import your Zod schema
-import type { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { gamesSchema } from "@/app/lib/schema";
 import Game from "@/app/types/game";
 import { GameService } from "@/app/services/game-service";
@@ -49,7 +48,6 @@ export default function GameForm({
   });
 
   const imageValue = watch("image");
-  console.log("Form errors:", errors);
 
   useEffect(() => {
     if (imageValue && typeof imageValue === "string") {
@@ -65,13 +63,12 @@ export default function GameForm({
   }, [initialData, reset]);
 
   const onSubmit = async (data: GameFormData) => {
-    console.log("test submit");
     setIsSubmitting(true);
 
     try {
-      const response = isEditMode
+      await (isEditMode
         ? GameService.updateGame(gameId.toString(), data)
-        : GameService.createGame(data);
+        : GameService.createGame(data));
 
       toast.success(
         isEditMode ? "Game updated successfully!" : "Game created successfully!"

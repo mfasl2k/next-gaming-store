@@ -24,7 +24,7 @@ interface CartContextType {
   isLoading: boolean;
   isInCart: (gameId: number) => boolean;
   addItem: (game: Game) => Promise<void>;
-  removeItem: (gameId: number) => Promise<void>;
+  removeItem: (cartId: number) => Promise<void>;
   clearCart: () => Promise<void>;
 }
 
@@ -128,13 +128,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const removeItem = async (gameId: number) => {
+  const removeItem = async (cartId: number) => {
     setIsLoading(true);
 
     try {
       if (status === "authenticated" && session?.user?.id) {
         const response = await fetch(
-          `/api/carts/${session.user.id}/items/${gameId}`,
+          `/api/carts/${session.user.id}/items/${cartId}`,
           {
             method: "DELETE",
           }
@@ -145,13 +145,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
 
         setCartItems((prevItems) =>
-          prevItems.filter((item) => item.game.id !== gameId)
+          prevItems.filter((item) => item.id !== cartId)
         );
       } else if (status === "unauthenticated") {
-        const itemToRemove = cartItems.find((item) => item.game.id === gameId);
+        const itemToRemove = cartItems.find((item) => item.id === cartId);
 
         setCartItems((prevItems) =>
-          prevItems.filter((item) => item.game.id !== gameId)
+          prevItems.filter((item) => item.id !== cartId)
         );
 
         if (itemToRemove) {
