@@ -1,78 +1,112 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
+# Key workflow updates for Next.js 15.1.7 compatibility
 
-name: Build and deploy Node.js app to Azure Web App - greengamingstore
+- name: Set up Node.js version
+  uses: actions/setup-node@v3
+  with:
+    node-version: "18.x" # Use more compatible Node.js version
 
-on:
-  push:
-    branches:
-      - main
-  workflow_dispatch:
+- name: npm install with explicit package versions
+  run: |
+    npm install --legacy-peer-deps
+    npm install next@15.1.7 --save-exact
+    npx prisma generate
+  env:
+    DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-    steps:
-      - uses: actions/checkout@v4
+- name: Create custom server.js
+  run: |
+    cat > server.js << 'EOL'
+    // server.js for Next.js 15.1.7
+    const { createServer } = require('http');
+    const { parse } = require('url');
+    const next = require('next');
 
-      - name: Set up Node.js version
-        uses: actions/setup-node@v3
-        with:
-          node-version: "22.x"
+    // Force production mode since we're deploying
+    process.env.NODE_ENV = 'production';
 
-      - name: npm install and generate Prisma client
-        run: |
-          npm install
-          npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    // App configuration
+    const hostname = '0.0.0.0'; // Listen on all network interfaces
+    const port = process.env.PORT || 8080;
 
-      - name: Build Next.js app
-        run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Add any other required environment variables here
+    // Create Next.js app instance
+    console.log(`Starting Next.js 15.1.7 in production mode`);
+    const app = next({ 
+      dev: false,
+      hostname,
+      port,
+      dir: process.cwd()
+    });
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+    // Prepare and start the app
+    async function startServer() {
+      try {
+        const handle = app.getRequestHandler();
+        await app.prepare();
+        
+        createServer(async (req, res) => {
+          try {
+            const parsedUrl = parse(req.url, true);
+            await handle(req, res, parsedUrl);
+          } catch (err) {
+            console.error('Error handling request:', err);
+            if (!res.headersSent) {
+              res.statusCode = 500;
+              res.end('Internal Server Error');
+            }
+          }
+        }).listen(port, (err) => {
+          if (err) throw err;
+          console.log(`> Server ready on http://${hostname}:${port}`);
+        });
+      } catch (err) {
+        console.error('Fatal error during startup:', err);
+        process.exit(1);
+      }
+    }
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: node-app
-          path: release.zip
+    startServer();
+    EOL
 
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: "Production"
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-    permissions:
-      id-token: write #This is required for requesting the JWT
-      contents: read #This is required for actions/checkout
-    steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: node-app
+- name: Create startup script
+  run: |
+    cat > startup.sh << 'EOL'
+    #!/bin/bash
+    set -e
 
-      - name: Unzip artifact for deployment
-        run: unzip release.zip
+    # Debugging information
+    echo "Node version: $(node -v)"
+    echo "Working directory: $(pwd)"
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_91A3A662EE5640BC9380F010677D5F22 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F4884EE765D0457EAB59159D15D3353B }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0E5FCBE869CB437E8FF18628FFF42B39 }}
+    # Start the server with more verbose output
+    echo "Starting Next.js application..."
+    NODE_OPTIONS="--trace-warnings" node server.js
+    EOL
+    chmod +x startup.sh
 
-      - name: "Deploy to Azure Web App"
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: "greengamingstore"
-          slot-name: "Production"
-          package: .
+- name: Configure App Service settings
+  uses: azure/appservice-settings@v1
+  with:
+    app-name: "greengamingstore"
+    slot-name: "Production"
+    app-settings-json: |
+      [
+        {
+          "name": "WEBSITE_NODE_DEFAULT_VERSION",
+          "value": "~18",
+          "slotSetting": false
+        },
+        {
+          "name": "DATABASE_URL",
+          "value": "${{ secrets.DATABASE_URL }}",
+          "slotSetting": false
+        },
+        {
+          "name": "NODE_ENV",
+          "value": "production",
+          "slotSetting": false
+        }
+      ]
+    general-settings-json: |
+      {
+        "startupCommand": "./startup.sh"
+      }
