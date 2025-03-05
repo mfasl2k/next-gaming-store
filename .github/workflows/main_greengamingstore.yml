@@ -1,112 +1,130 @@
 # Key workflow updates for Next.js 15.1.7 compatibility
 
-- name: Set up Node.js version
-  uses: actions/setup-node@v3
-  with:
-    node-version: "18.x" # Use more compatible Node.js version
+name: CI
 
-- name: npm install with explicit package versions
-  run: |
-    npm install --legacy-peer-deps
-    npm install next@15.1.7 --save-exact
-    npx prisma generate
-  env:
-    DATABASE_URL: ${{ secrets.DATABASE_URL }}
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
-- name: Create custom server.js
-  run: |
-    cat > server.js << 'EOL'
-    // server.js for Next.js 15.1.7
-    const { createServer } = require('http');
-    const { parse } = require('url');
-    const next = require('next');
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    // Force production mode since we're deploying
-    process.env.NODE_ENV = 'production';
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    // App configuration
-    const hostname = '0.0.0.0'; // Listen on all network interfaces
-    const port = process.env.PORT || 8080;
+      - name: Set up Node.js version
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18.x" # Use more compatible Node.js version
 
-    // Create Next.js app instance
-    console.log(`Starting Next.js 15.1.7 in production mode`);
-    const app = next({ 
-      dev: false,
-      hostname,
-      port,
-      dir: process.cwd()
-    });
+      - name: npm install with explicit package versions
+        run: |
+          npm install --legacy-peer-deps
+          npm install next@15.1.7 --save-exact
+          npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-    // Prepare and start the app
-    async function startServer() {
-      try {
-        const handle = app.getRequestHandler();
-        await app.prepare();
-        
-        createServer(async (req, res) => {
-          try {
-            const parsedUrl = parse(req.url, true);
-            await handle(req, res, parsedUrl);
-          } catch (err) {
-            console.error('Error handling request:', err);
-            if (!res.headersSent) {
-              res.statusCode = 500;
-              res.end('Internal Server Error');
+      - name: Create custom server.js
+        run: |
+          cat > server.js << 'EOL'
+          // server.js for Next.js 15.1.7
+          const { createServer } = require('http');
+          const { parse } = require('url');
+          const next = require('next');
+
+          // Force production mode since we're deploying
+          process.env.NODE_ENV = 'production';
+
+          // App configuration
+          const hostname = '0.0.0.0'; // Listen on all network interfaces
+          const port = process.env.PORT || 8080;
+
+          // Create Next.js app instance
+          console.log(`Starting Next.js 15.1.7 in production mode`);
+          const app = next({ 
+            dev: false,
+            hostname,
+            port,
+            dir: process.cwd()
+          });
+
+          // Prepare and start the app
+          async function startServer() {
+            try {
+              const handle = app.getRequestHandler();
+              await app.prepare();
+              
+              createServer(async (req, res) => {
+                try {
+                  const parsedUrl = parse(req.url, true);
+                  await handle(req, res, parsedUrl);
+                } catch (err) {
+                  console.error('Error handling request:', err);
+                  if (!res.headersSent) {
+                    res.statusCode = 500;
+                    res.end('Internal Server Error');
+                  }
+                }
+              }).listen(port, (err) => {
+                if (err) throw err;
+                console.log(`> Server ready on http://${hostname}:${port}`);
+              });
+            } catch (err) {
+              console.error('Fatal error during startup:', err);
+              process.exit(1);
             }
           }
-        }).listen(port, (err) => {
-          if (err) throw err;
-          console.log(`> Server ready on http://${hostname}:${port}`);
-        });
-      } catch (err) {
-        console.error('Fatal error during startup:', err);
-        process.exit(1);
-      }
-    }
 
-    startServer();
-    EOL
+          startServer();
+          EOL
 
-- name: Create startup script
-  run: |
-    cat > startup.sh << 'EOL'
-    #!/bin/bash
-    set -e
+      - name: Create startup script
+        run: |
+          cat > startup.sh << 'EOL'
+          #!/bin/bash
+          set -e
 
-    # Debugging information
-    echo "Node version: $(node -v)"
-    echo "Working directory: $(pwd)"
+          # Debugging information
+          echo "Node version: $(node -v)"
+          echo "Working directory: $(pwd)"
 
-    # Start the server with more verbose output
-    echo "Starting Next.js application..."
-    NODE_OPTIONS="--trace-warnings" node server.js
-    EOL
-    chmod +x startup.sh
+          # Start the server with more verbose output
+          echo "Starting Next.js application..."
+          NODE_OPTIONS="--trace-warnings" node server.js
+          EOL
+          chmod +x startup.sh
 
-- name: Configure App Service settings
-  uses: azure/appservice-settings@v1
-  with:
-    app-name: "greengamingstore"
-    slot-name: "Production"
-    app-settings-json: |
-      [
-        {
-          "name": "WEBSITE_NODE_DEFAULT_VERSION",
-          "value": "~18",
-          "slotSetting": false
-        },
-        {
-          "name": "DATABASE_URL",
-          "value": "${{ secrets.DATABASE_URL }}",
-          "slotSetting": false
-        },
-        {
-          "name": "NODE_ENV",
-          "value": "production",
-          "slotSetting": false
-        }
-      ]
-    general-settings-json: |
-      {
-        "startupCommand": "./startup.sh"
-      }
+      - name: Configure App Service settings
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: "greengamingstore"
+          slot-name: "Production"
+          app-settings-json: |
+            [
+              {
+                "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                "value": "~18",
+                "slotSetting": false
+              },
+              {
+                "name": "DATABASE_URL",
+                "value": "${{ secrets.DATABASE_URL }}",
+                "slotSetting": false
+              },
+              {
+                "name": "NODE_ENV",
+                "value": "production",
+                "slotSetting": false
+              }
+            ]
+          general-settings-json: |
+            {
+              "startupCommand": "./startup.sh"
+            }
