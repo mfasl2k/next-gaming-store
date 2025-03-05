@@ -14,24 +14,30 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
-
     steps:
       - uses: actions/checkout@v4
-
+      
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
-
-      - name: npm install, build, and test
+      
+      - name: npm install and generate Prisma client
         run: |
           npm install
-          npm run build --if-present
-          npm run test --if-present
-
+          npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Add any other required environment variables here
+      
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
-
+      
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -47,13 +53,12 @@ jobs:
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: node-app
-
+      
       - name: Unzip artifact for deployment
         run: unzip release.zip
       
@@ -63,7 +68,7 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_91A3A662EE5640BC9380F010677D5F22 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F4884EE765D0457EAB59159D15D3353B }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0E5FCBE869CB437E8FF18628FFF42B39 }}
-
+      
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -71,4 +76,3 @@ jobs:
           app-name: 'greengamingstore'
           slot-name: 'Production'
           package: .
-          
