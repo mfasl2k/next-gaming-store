@@ -22,11 +22,22 @@ jobs:
         with:
           node-version: "18.x"
 
+      - name: Install dependencies
+        run: |
+          npm install
+          npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build Next.js app
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
       - name: Create custom server files
         run: |
-          # Create server.js
-          cat > server.js << 'EOL'
-          // server.js for Next.js 15.1.7
+          # Create server.js and verify it exists
+          echo "// server.js for Next.js 15.1.7
           const { createServer } = require('http');
           const { parse } = require('url');
           const next = require('next');
@@ -39,7 +50,7 @@ jobs:
           const port = process.env.PORT || 8080;
 
           // Create Next.js app instance
-          console.log(`Starting Next.js 15.1.7 in production mode`);
+          console.log('Starting Next.js 15.1.7 in production mode');
           const app = next({ 
             dev: false,
             hostname,
@@ -66,7 +77,7 @@ jobs:
                 }
               }).listen(port, (err) => {
                 if (err) throw err;
-                console.log(`> Server ready on http://${hostname}:${port}`);
+                console.log('> Server ready on http://' + hostname + ':' + port);
               });
             } catch (err) {
               console.error('Fatal error during startup:', err);
@@ -74,12 +85,10 @@ jobs:
             }
           }
 
-          startServer();
-          EOL
+          startServer();" > server.js
 
           # Create startup.sh
-          cat > startup.sh << 'EOL'
-          #!/bin/bash
+          echo '#!/bin/bash
           set -e
 
           # Debugging information
@@ -87,27 +96,39 @@ jobs:
           echo "Working directory: $(pwd)"
           echo "Directory contents: $(ls -la)"
 
+          # Check if server.js exists
+          if [ ! -f server.js ]; then
+            echo "ERROR: server.js not found!"
+            exit 1
+          fi
+
           # Start the server with more verbose output
           echo "Starting Next.js application..."
-          NODE_OPTIONS="--trace-warnings" node server.js
-          EOL
+          NODE_OPTIONS="--trace-warnings" node server.js' > startup.sh
+
           chmod +x startup.sh
 
-          # Create a .env file with environment variables
-          cat > .env << EOL
-          NODE_ENV=production
-          EOL
+          # Verify files were created
+          ls -la
+          cat server.js
 
-      - name: Install dependencies and build
+      - name: Update package.json
         run: |
-          npm install
-          npx prisma generate
-          npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Update package.json to use custom server
+          jq '.scripts.start = "node server.js"' package.json > tmp.json && mv tmp.json package.json
+          cat package.json
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: |
+          # Make sure critical files are included in the zip
+          echo "Files to be zipped:"
+          ls -la
+          zip -r release.zip . -x "node_modules/*" ".git/*"
+          # Add node_modules separately with less verbose output
+          zip -r release.zip node_modules -q
+          # Verify zip contents
+          unzip -l release.zip | grep server.js
+          unzip -l release.zip | grep startup.sh
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -131,7 +152,14 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: |
+          unzip release.zip
+          # Verify critical files exist
+          ls -la
+          echo "Server.js content:"
+          cat server.js
+          echo "Startup.sh content:"
+          cat startup.sh
 
       - name: Login to Azure
         uses: azure/login@v2
