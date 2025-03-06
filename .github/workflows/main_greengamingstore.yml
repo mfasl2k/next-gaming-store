@@ -20,23 +20,55 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: "22.x"
+          node-version: "18.x"
 
-      - name: npm install and generate Prisma client
+      - name: Install dependencies
         run: |
           npm install
           npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Build Next.js app
+      - name: Build Next.js app with standalone output
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # Add any other required environment variables here
+
+      - name: Create startup script in standalone output
+        run: |
+          # Create startup script in the standalone output directory
+          echo '#!/bin/bash
+          # Start Next.js in standalone mode
+          cd standalone
+          node server.js' > .next/standalone/start.sh
+
+          # Make it executable
+          chmod +x .next/standalone/start.sh
+
+          # Verify it was created
+          ls -la .next/standalone/
+          cat .next/standalone/start.sh
+
+      - name: Prepare deployment package
+        run: |
+          # Copy public and static folders to standalone directory
+          cp -r .next/static .next/standalone/.next/
+          mkdir -p .next/standalone/public
+          cp -r public/* .next/standalone/public/ || echo "No public files to copy"
+
+          # Verify the structure
+          echo "Standalone directory contents:"
+          ls -la .next/standalone/
+          echo ".next directory in standalone:"
+          ls -la .next/standalone/.next/
 
       - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+        run: |
+          cd .next/standalone
+          zip -r ../../release.zip .
+          cd ../..
+          # Verify zip contents
+          unzip -l release.zip | head -n 20
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -60,7 +92,12 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: unzip release.zip
+        run: |
+          unzip release.zip
+          # Verify critical files exist
+          ls -la
+          echo "Directory structure:"
+          find . -type f -name "*.js" | sort
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -76,3 +113,4 @@ jobs:
           app-name: "greengamingstore"
           slot-name: "Production"
           package: .
+          startup-command: "./start.sh"
