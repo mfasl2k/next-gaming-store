@@ -20,9 +20,9 @@ jobs:
       - name: Set up Node.js version
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "22.x"
 
-      - name: Install dependencies
+      - name: npm install and generate Prisma client
         run: |
           npm install
           npx prisma generate
@@ -33,102 +33,10 @@ jobs:
         run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Create custom server files
-        run: |
-          # Create server.js and verify it exists
-          echo "// server.js for Next.js 15.1.7
-          const { createServer } = require('http');
-          const { parse } = require('url');
-          const next = require('next');
-
-          // Force production mode since we're deploying
-          process.env.NODE_ENV = 'production';
-
-          // App configuration
-          const hostname = '0.0.0.0'; // Listen on all network interfaces
-          const port = process.env.PORT || 8080;
-
-          // Create Next.js app instance
-          console.log('Starting Next.js 15.1.7 in production mode');
-          const app = next({ 
-            dev: false,
-            hostname,
-            port,
-            dir: process.cwd()
-          });
-
-          // Prepare and start the app
-          async function startServer() {
-            try {
-              const handle = app.getRequestHandler();
-              await app.prepare();
-              
-              createServer(async (req, res) => {
-                try {
-                  const parsedUrl = parse(req.url, true);
-                  await handle(req, res, parsedUrl);
-                } catch (err) {
-                  console.error('Error handling request:', err);
-                  if (!res.headersSent) {
-                    res.statusCode = 500;
-                    res.end('Internal Server Error');
-                  }
-                }
-              }).listen(port, (err) => {
-                if (err) throw err;
-                console.log('> Server ready on http://' + hostname + ':' + port);
-              });
-            } catch (err) {
-              console.error('Fatal error during startup:', err);
-              process.exit(1);
-            }
-          }
-
-          startServer();" > server.js
-
-          # Create startup.sh
-          echo '#!/bin/bash
-          set -e
-
-          # Debugging information
-          echo "Node version: $(node -v)"
-          echo "Working directory: $(pwd)"
-          echo "Directory contents: $(ls -la)"
-
-          # Check if server.js exists
-          if [ ! -f server.js ]; then
-            echo "ERROR: server.js not found!"
-            exit 1
-          fi
-
-          # Start the server with more verbose output
-          echo "Starting Next.js application..."
-          NODE_OPTIONS="--trace-warnings" node server.js' > startup.sh
-
-          chmod +x startup.sh
-
-          # Verify files were created
-          ls -la
-          cat server.js
-
-      - name: Update package.json
-        run: |
-          # Update package.json to use custom server
-          jq '.scripts.start = "node server.js"' package.json > tmp.json && mv tmp.json package.json
-          cat package.json
+          # Add any other required environment variables here
 
       - name: Zip artifact for deployment
-        run: |
-          # Make sure critical files are included in the zip
-          echo "Files to be zipped:"
-          ls -la
-          zip -r release.zip . -x "node_modules/*" ".git/*"
-          # Add node_modules separately with less verbose output
-          zip -r release.zip node_modules -q
-          # Verify zip contents
-          unzip -l release.zip | grep server.js
-          unzip -l release.zip | grep startup.sh
+        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -152,14 +60,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: |
-          unzip release.zip
-          # Verify critical files exist
-          ls -la
-          echo "Server.js content:"
-          cat server.js
-          echo "Startup.sh content:"
-          cat startup.sh
+        run: unzip release.zip
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -175,4 +76,3 @@ jobs:
           app-name: "greengamingstore"
           slot-name: "Production"
           package: .
-          startup-command: "./startup.sh"
