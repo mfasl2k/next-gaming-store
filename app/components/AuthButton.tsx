@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
 import { FaRegCircleUser } from "react-icons/fa6";
+import Image from "next/image";
 
 const AuthButton = () => {
   const { data: session, status } = useSession();
@@ -12,7 +13,17 @@ const AuthButton = () => {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
   const handleSignOut = async () => {
-    await signOut({ redirect: true, callbackUrl: "/" });
+    if (process.env.NODE_ENV === "production") {
+      try {
+        await signOut({ redirect: false });
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Error during sign out:", error);
+        window.location.href = "/";
+      }
+    } else {
+      await signOut({ redirect: true, callbackUrl: "/" });
+    }
   };
 
   if (status === "loading") {
@@ -28,6 +39,13 @@ const AuthButton = () => {
           className="btn btn-ghost btn-circle avatar"
         >
           <div className="w-10 rounded-full">
+            {session?.user?.image ? (
+              <Image src={session.user.image} alt="User Avatar" fill />
+            ) : (
+              <div className="flex items-center justify-center h-full bg-slate-400 text-primary-content">
+                <FaRegCircleUser size="1.8rem" />
+              </div>
+            )}
             <div className="flex items-center justify-center h-full bg-slate-400 text-primary-content">
               <FaRegCircleUser size="1.8rem" />
             </div>
@@ -39,9 +57,9 @@ const AuthButton = () => {
           className="menu dropdown-content z-[1] p-2 shadow bg-sky-500 rounded-box w-52 mt-4"
         >
           <li className="menu-title px-4 py-2 text-lg text-black">
-            <span className="font-bold ">
-              Hi, {session.user.email?.split("@")[0] || "User"}
-            </span>
+            Hi,{" "}
+            {session.user.name || session.user.email?.split("@")[0] || "User"}
+            Hi, {session.user.email?.split("@")[0] || "User"}
           </li>
           <li className="px-2">
             <button onClick={handleSignOut} className="py-2 text-red-600">
