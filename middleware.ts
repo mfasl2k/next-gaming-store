@@ -12,7 +12,8 @@ export async function middleware(request: NextRequest) {
 
   const token = await getToken({
     req: request,
-    secret: process.env.AUTH_SECRET,
+    secret:
+      process.env.AUTH_SECRET || "wphGYmbdRw2ATXQnkx732ydTny/L10Pnzwhn3rc/Ny8=",
   });
 
   const isAdminRoute = pathname.startsWith("/admin");
