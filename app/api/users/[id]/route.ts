@@ -1,3 +1,4 @@
+import { auth } from "@/app/auth";
 import { adminRoute, protectedRoute } from "@/app/lib/authMiddleware";
 import { saltAndHashPassword } from "@/app/lib/bcryptHandler";
 import { prisma } from "@/prisma/client";
@@ -5,16 +6,13 @@ import { getToken } from "next-auth/jwt";
 import { NextRequest, NextResponse } from "next/server";
 
 async function checkUserAccess(request: NextRequest, requestedUserId: number) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const session = await auth();
 
-  if (token?.role === "ADMIN") {
+  if (session?.user.role === "ADMIN") {
     return true;
   }
 
-  return token?.id === requestedUserId.toString();
+  return session?.user.id === requestedUserId.toString();
 }
 
 async function getUserById(
