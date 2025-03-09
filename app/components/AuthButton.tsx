@@ -59,7 +59,6 @@ const AuthButton = () => {
           <li className="menu-title px-4 py-2 text-lg text-black">
             Hi,{" "}
             {session.user.name || session.user.email?.split("@")[0] || "User"}
-            Hi, {session.user.email?.split("@")[0] || "User"}
           </li>
           <li className="px-2">
             <button onClick={handleSignOut} className="py-2 text-red-600">
