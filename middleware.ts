@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/app/auth";
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,10 +10,8 @@ export async function middleware(request: NextRequest) {
 
   const isAuthRoute = pathname === "/login" || pathname === "/register";
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const session = await auth();
+  const token = session?.user;
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isAdmin = token?.role === "ADMIN";
@@ -26,7 +24,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAdminRoute && !isAdmin) {
-      return NextResponse.redirect(new URL("/admin", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
   }
 

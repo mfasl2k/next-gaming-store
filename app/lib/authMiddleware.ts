@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/app/auth";
 
 export enum Role {
   USER = "USER",
@@ -20,10 +20,9 @@ export async function authMiddleware(
   if (isPublic) {
     return new NextResponse(null, { status: 200 });
   }
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET || "temporary-fixed-secret-for-testing",
-  });
+
+  const session = await auth();
+  const token = session?.user;
 
   if (!token) {
     return NextResponse.json(
