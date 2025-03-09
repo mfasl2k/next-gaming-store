@@ -35,10 +35,22 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
 
+      - name: Add environment variables to deployment
+        run: |
+          # Create .env file in the standalone directory
+          echo "AUTH_SECRET=${{ secrets.AUTH_SECRET }}" > .next/standalone/.env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .next/standalone/.env
+
+          # Verify it was created (without showing secrets)
+          echo "Created .env file:"
+          grep -v "SECRET\|URL" .next/standalone/.env || echo "No non-sensitive variables to show"
+
       - name: Create startup script in standalone output
         run: |
           # Create startup script in the standalone output directory
           echo '#!/bin/bash
+          # Load environment variables
+          export $(grep -v "^#" .env | xargs)
           # Start Next.js in standalone mode
           cd standalone
           node server.js' > .next/standalone/start.sh
@@ -106,12 +118,6 @@ jobs:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_91A3A662EE5640BC9380F010677D5F22 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_F4884EE765D0457EAB59159D15D3353B }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_0E5FCBE869CB437E8FF18628FFF42B39 }}
-
-      - name: Set App Settings
-        uses: azure/cli@v1
-        with:
-          inlineScript: |
-            az webapp config appsettings set --name "greengamingstore" --resource-group "MyResourceGroupe" --settings AUTH_SECRET="${{ secrets.AUTH_SECRET }}"
 
       - name: "Deploy to Azure Web App"
         id: deploy-to-webapp
