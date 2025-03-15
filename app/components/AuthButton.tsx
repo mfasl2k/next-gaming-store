@@ -6,13 +6,16 @@ import SignInForm from "./SignInForm";
 import SignUpForm from "./SignUpForm";
 import { FaRegCircleUser } from "react-icons/fa6";
 import Image from "next/image";
+import { useCart } from "../context/cart/cart-context";
 
 const AuthButton = () => {
   const { data: session, status } = useSession();
+  const { clearCart } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
 
   const handleSignOut = async () => {
+    await clearCart();
     if (process.env.NODE_ENV === "production") {
       try {
         await signOut({ redirect: false });

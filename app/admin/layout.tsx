@@ -16,7 +16,17 @@ export default function AdminLayout({
   const pathname = usePathname();
 
   const handleLogout = async () => {
-    await signOut({ callbackUrl: "/" });
+    if (process.env.NODE_ENV === "production") {
+      try {
+        await signOut({ redirect: false });
+        window.location.href = "/";
+      } catch (error) {
+        console.error("Error during sign out:", error);
+        window.location.href = "/";
+      }
+    } else {
+      await signOut({ redirect: true, callbackUrl: "/" });
+    }
   };
 
   return (
