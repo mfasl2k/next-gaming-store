@@ -26,10 +26,6 @@ WORKDIR /app
 # Set to production environment
 ENV NODE_ENV=production
 
-# Copy entrypoint script first to ensure it exists
-COPY entrypoint.sh ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
-
 # Copy necessary files from builder stage
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next/standalone ./
@@ -43,5 +39,5 @@ COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 # Expose the port
 EXPOSE 3000
 
-# Run the application
-ENTRYPOINT ["./entrypoint.sh"]
+# Set as entrypoint
+CMD sh -c "echo 'Running Prisma migrations...' && npx prisma generate && npx prisma migrate deploy && echo 'Starting Next.js...' && node server.js"

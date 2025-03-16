@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/prisma/client";
 import { adminRoute, publicRoute } from "@/app/lib/authMiddleware";
 
-async function getAllGames() {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function getAllGames(request: NextRequest) {
   try {
     const games = await prisma.games.findMany();
     return NextResponse.json(games);
