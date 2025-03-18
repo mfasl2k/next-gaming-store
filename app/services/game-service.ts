@@ -63,7 +63,7 @@ export const GameService = {
   async updateGame(id: string, gameData: Partial<Game>): Promise<Game> {
     try {
       const response = await fetch(`/api/games/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
